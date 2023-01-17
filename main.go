@@ -47,7 +47,7 @@ func check() {
 			continue
 		}
 		//Отсеивание игр, на которых можно буститься
-		if preview.Game == "ZOMBIECLAUS" {
+		if (preview.Game == "ZOMBIECLAUS") || (preview.Game == "WHITECOLD") {
 			continue
 		}
 
@@ -73,9 +73,16 @@ func check() {
 		continued := false
 		if preview.Game == "DUELS" {
 			for _, event := range match.Events {
-				if event.Type == "kill" && event.KillerHealth != "20.0" && event.KillerHealth != "19.0" && event.KillerHealth != "18.0" && event.KillerHealth != "17.0" {
-					continued = true
-					break
+				if event.Type == "kill" {
+					killerHealth, err := strconv.ParseFloat(event.KillerHealth, 32)
+					if err != nil {
+						log.Fatal(err)
+					}
+
+					if killerHealth >= 17 {
+						continued = true
+						break
+					}
 				}
 			}
 		}
@@ -97,7 +104,6 @@ func check() {
 		}
 
 		sort.Strings(players)
-		log.Print(preview.Id, players)
 		addMatch(connection, preview.Id, strings.Join(players, " "), preview.Game, strings.Join(winners, ";"))
 	}
 }

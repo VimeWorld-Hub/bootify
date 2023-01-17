@@ -6,7 +6,6 @@ import (
 	"log"
 	"strconv"
 	"strings"
-	"time"
 )
 
 var bot *tgbotapi.BotAPI
@@ -139,17 +138,21 @@ func get(update tgbotapi.Update, delim []string) tgbotapi.MessageConfig {
 		if length > 20 {
 			gameList = gameList[0:20]
 		}
+		//TODO: пофиксить тут дату
 		bot.Send(generateMessage(
 			update,
-			fmt.Sprintf("%s\n%s\nCharkosOff\n%s",
+			fmt.Sprintf("%s\n%s\nCharkosOff\n%s\n%s",
 				username,
-				strings.Join(playersStats, " "),
+				strings.Join(remove(playersStats, username), " "),
+				convertDate(matches[0].Date),
 				strings.Join(gameList, "\n"))))
 	}
 
-	return generateMessage(update, fmt.Sprintf("%s\n%s\nCharkosOff\n11\n%s",
+	//TODO: пофиксить тут дату
+	return generateMessage(update, fmt.Sprintf("%s\n%s\nCharkosOff\n%s\n%s",
 		strings.Join(winners, " "),
 		strings.Join(players, " "),
+		convertDate(matches[0].Date),
 		strings.Join(games, "\n")))
 }
 
@@ -165,20 +168,6 @@ func matches(update tgbotapi.Update) tgbotapi.MessageConfig {
 	}
 
 	return generateMessage(update, "<strong>💩 Возможные бустеры:</strong>\n"+strings.Join(list, "\n"))
-}
-
-func convertDate(date int) string {
-	return time.Unix(int64(date), 0).String()
-}
-
-func find(array []string, need any) bool {
-	for _, value := range array {
-		if value == need {
-			return true
-		}
-	}
-
-	return false
 }
 
 func generateMessage(update tgbotapi.Update, text string) tgbotapi.MessageConfig {
