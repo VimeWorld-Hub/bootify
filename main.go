@@ -71,15 +71,17 @@ func check() {
 
 		//Дополнительные проверки на дуэли
 		continued := false
+
 		if preview.Game == "DUELS" {
 			for _, event := range match.Events {
 				if event.Type == "kill" {
 					killerHealth, err := strconv.ParseFloat(event.KillerHealth, 32)
 					if err != nil {
+						log.Print(killerHealth)
 						log.Fatal(err)
 					}
 
-					if killerHealth >= 17 {
+					if killerHealth < 17.0 {
 						continued = true
 						break
 					}
