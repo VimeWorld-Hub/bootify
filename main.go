@@ -14,9 +14,21 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
+type Config struct {
+	User     string
+	Database string
+	Password string
+
+	TelegramToken string
+	Admin         int64
+
+	VimeWorldToken    string
+	VimeWorldUsername string
+}
+
 var (
-	conf       Config
-	connection *sql.DB
+	conf Config
+	db   *sql.DB
 )
 
 func main() {
@@ -27,23 +39,24 @@ func main() {
 	if _, err = toml.DecodeFile(*configFile, &conf); err != nil {
 		log.Fatalln(err)
 	}
-	connection = createConnection(conf.User, conf.Password, conf.Database)
+	db = createConnection(conf.User, conf.Password, conf.Database)
 	go telegram()
 
 	s := gocron.NewScheduler(time.UTC)
 	_, err = s.Every("15s").Do(check)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 	s.StartAsync()
 	s.StartBlocking()
 }
 
+// Функция для поиска подозрительных матчей
 func check() {
 	matches := getMatchLatest()
 	for _, preview := range matches {
-		//Отсеивание матчей, длина которых больше 1 минуты
-		if preview.Duration > 60 {
+		//Отсеивание игр, длина которых больше 40 секунд
+		if preview.Duration > 40 {
 			continue
 		}
 		//Отсеивание игр, на которых можно буститься
@@ -65,7 +78,7 @@ func check() {
 		}
 
 		//Проверка, обработан ли был матч ранее
-		if getMatch(connection, preview.Id) {
+		if getMatch(db, preview.Id) {
 			continue
 		}
 
@@ -77,7 +90,6 @@ func check() {
 				if event.Type == "kill" {
 					killerHealth, err := strconv.ParseFloat(event.KillerHealth, 32)
 					if err != nil {
-						log.Print(killerHealth)
 						log.Fatal(err)
 					}
 
@@ -89,11 +101,13 @@ func check() {
 			}
 		}
 
+		//Список победивших игроков
 		winners := getMatchWinner(match)
 
+		// Проверяем статус блокировки для победителей, чтобы не засорять лишний раз базу данных
 		var players []string
 		for _, player := range match.Players {
-			if (checkBlockStatus(connection, player.Id, preview.Game)) && (find(winners, strconv.Itoa(player.Id))) {
+			if (checkBlockStatus(db, player.Id, preview.Game)) && (find(winners, strconv.Itoa(player.Id))) {
 				continued = true
 				break
 			}
@@ -106,10 +120,11 @@ func check() {
 		}
 
 		sort.Strings(players)
-		addMatch(connection, preview.Id, strings.Join(players, " "), preview.Game, strings.Join(winners, ";"))
+		addMatch(db, preview.Id, strings.Join(players, " "), preview.Game, strings.Join(winners, ";"))
 	}
 }
 
+// Создание соединения с базой данных
 func createConnection(username string, password string, database string) *sql.DB {
 	db, err := sql.Open("mysql", username+":"+password+"@/"+database)
 	if err != nil {

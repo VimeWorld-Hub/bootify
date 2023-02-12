@@ -5,27 +5,27 @@ import (
 	"log"
 )
 
-func addMatch(connection *sql.DB, id string, players string, game string, winner string) {
-	_, err := connection.Exec("INSERT INTO `matches`(`match_id`, `players`, `date`, `game`, `winner`) VALUES (?, ?, ?, ?, ?)", id, players, getCurrentDate(), game, winner)
+func addMatch(db *sql.DB, id string, players string, game string, winner string) {
+	_, err := db.Exec("INSERT INTO `matches`(`match_id`, `players`, `date`, `game`, `winner`) VALUES (?, ?, ?, ?, ?)", id, players, getCurrentDate(), game, winner)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func getMatch(connection *sql.DB, id string) bool {
+func getMatch(db *sql.DB, id string) bool {
 	var receivedMatch string
-	err := connection.QueryRow("SELECT `game` FROM `matches` WHERE `match_id` = ?", id).Scan(&receivedMatch)
+	err := db.QueryRow("SELECT `game` FROM `matches` WHERE `match_id` = ?", id).Scan(&receivedMatch)
 
 	return err == nil
 }
 
-func removeMatches(players string) {
-	connection.QueryRow("DELETE FROM `matches` WHERE `players` = ?", players)
+func removeMatches(db *sql.DB, players string) {
+	db.QueryRow("DELETE FROM `matches` WHERE `players` = ?", players)
 }
 
-func getMatches(players string) []MatchSQL {
+func getMatches(db *sql.DB, players string) []MatchSQL {
 	var list []MatchSQL
-	rows, err := connection.Query("SELECT * FROM `matches` WHERE `players` = ? LIMIT 30", players)
+	rows, err := db.Query("SELECT * FROM `matches` WHERE `players` = ? LIMIT 30", players)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -42,15 +42,15 @@ func getMatches(players string) []MatchSQL {
 		if err := rows.Scan(&id, &players, &date, &game, &winner); err != nil {
 			log.Fatal(err)
 		}
-		list = append(list, MatchSQL{id, players, date, game, winner})
+		list = append(list, MatchSQL{MatchId: id, Players: players, Date: date, Game: game, Winner: winner})
 	}
 
 	return list
 }
 
-func getSuspectMatches(repetitions int) []MatchListSQL {
+func getSuspectMatches(db *sql.DB, repetitions int) []MatchListSQL {
 	var list []MatchListSQL
-	rows, err := connection.Query("SELECT COUNT(*) as repetitions, players FROM `matches` GROUP BY players HAVING repetitions > ?", repetitions)
+	rows, err := db.Query("SELECT COUNT(*) as repetitions, players FROM `matches` GROUP BY players HAVING repetitions > ?", repetitions)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -63,22 +63,22 @@ func getSuspectMatches(repetitions int) []MatchListSQL {
 		if err := rows.Scan(&count, &players); err != nil {
 			log.Fatal(err)
 		}
-		list = append(list, MatchListSQL{count, players})
+		list = append(list, MatchListSQL{Repetitions: count, Players: players})
 	}
 
 	return list
 }
 
-func addToBlockList(connection *sql.DB, id int, game string, admin int) {
-	_, err := connection.Exec("INSERT INTO `blocked`(`user_id`, `game`, `admin`, `date`) VALUES (?, ?, ?, ?)", id, game, admin, getCurrentDate())
+func addToBlockList(db *sql.DB, id int, game string, admin int) {
+	_, err := db.Exec("INSERT INTO `blocked`(`user_id`, `game`, `admin`, `date`) VALUES (?, ?, ?, ?)", id, game, admin, getCurrentDate())
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func checkBlockStatus(connection *sql.DB, id int, game string) bool {
+func checkBlockStatus(db *sql.DB, id int, game string) bool {
 	var receivedGame string
-	err := connection.QueryRow("SELECT `game` FROM `blocked` WHERE `user_id` = ? and `game` = ?", id, game).Scan(&receivedGame)
+	err := db.QueryRow("SELECT `game` FROM `blocked` WHERE `user_id` = ? and `game` = ?", id, game).Scan(&receivedGame)
 
 	return err == nil
 }

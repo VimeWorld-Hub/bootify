@@ -1,13 +1,5 @@
 package main
 
-type Config struct {
-	User     string
-	Database string
-	Password string
-
-	Token string
-}
-
 type Player struct {
 	Id       int
 	Username string

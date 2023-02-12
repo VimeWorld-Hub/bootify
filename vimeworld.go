@@ -13,7 +13,7 @@ import (
 const ENDPOINT = "https://api.vimeworld.com/"
 
 func req(URL string) []byte {
-	resp, err := http.Get(URL)
+	resp, err := http.Get(URL + "?token=" + conf.VimeWorldToken)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -68,6 +68,7 @@ func getMatchLatest() []MatchPreview {
 
 	err := json.Unmarshal(body, &matchList)
 	if err != nil {
+		log.Print(string(body[:]))
 		log.Fatal(err)
 	}
 
@@ -82,6 +83,7 @@ func getPlayersFromNames(players []string) map[int]Player {
 	err := json.Unmarshal(body, &playersList)
 
 	if err != nil {
+		log.Print(string(body[:]))
 		log.Fatal(err)
 	}
 
@@ -100,6 +102,7 @@ func getPlayers(players string) map[int]Player {
 	err := json.Unmarshal(body, &playersList)
 
 	if err != nil {
+		log.Print(string(body[:]))
 		log.Fatal(err)
 	}
 

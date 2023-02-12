@@ -2,4 +2,8 @@ User="root"
 Database=""
 Password=""
 
-Token=""
+TelegramToken = ""
+Admin = -1
+
+VimeWorldToken = ""
+VimeWorldUsername = ""
